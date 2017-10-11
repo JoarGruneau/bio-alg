@@ -6,7 +6,7 @@ def task_1():
     output = open('task_1_out.txt', 'w')
     count = 0
     lines = file.read().splitlines()
-    lines = lines[1:100]
+    # lines = lines[1:100]
     print(str(len(lines)) + " to process")
     suffix_tree = Suffix_tree(lines)
     match = suffix_tree.longest_suffix(adapter_seq)

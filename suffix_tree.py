@@ -62,6 +62,8 @@ class Suffix_tree:
         tree_depth = len(self.string_list[0]) - 1
         self.reset()
         for string_pointer in range(string_list_size):
+            if string_pointer%1000 == 0:
+                print('constructed' + str(string_pointer))
             size = len(self.string_list[string_pointer])
             self.reset()
             for index in range(size):
@@ -91,21 +93,21 @@ class Suffix_tree:
             if (self.active_node.children.get(self.string_list[string_pointer][self.active_edge]) is None):
                 new_node = self.create_node(index, string_pointer = string_pointer, leaf_node=True)
 
-                print('adding at' + self.string_list[string_pointer][self.active_edge])
+                # print('adding at' + self.string_list[string_pointer][self.active_edge])
                 self.active_node.children[self.string_list[string_pointer][self.active_edge]] = new_node
                 if (self.last_created_node is not None):
                     self.last_created_node.suffix_link = self.active_node
                     self.last_created_node = None
             else:
                 child = self.active_node.children.get(self.string_list[string_pointer][self.active_edge])
-                print('getting ' +  self.string_list[string_pointer][self.active_edge] + ' got ' + self.get_edge(child))
-                print(child)
+                # print('getting ' +  self.string_list[string_pointer][self.active_edge] + ' got ' + self.get_edge(child))
+                # print(child)
                 length = child.length()
                 if (self.active_length >= length):
                     self.active_edge += length
                     self.active_length -= length
                     self.active_node = child
-                    print('walking dow')
+                    # print('walking dow')
                     continue
 
                 # print('edge =' + self.get_edge(child))
@@ -118,7 +120,7 @@ class Suffix_tree:
                 # print(self.string_list[string_pointer][index])
                 # print(len(self.string_list[child.string_pointer]))
                 # print('start' + str(child.start))
-                print(child.start + self.active_length)
+                # print(child.start + self.active_length)
                 if (self.string_list[child.string_pointer][child.start + self.active_length] == self.string_list[string_pointer][index]):
                     if((self.last_created_node is not None) and (self.active_node != self.root)):
                         self.last_created_node.suffix_link = self.active_node
@@ -203,39 +205,39 @@ class Suffix_tree:
                     result[element] = index
             # print(node.length())
             child = node.children.get(prefix[index])
-            print("looking for " + prefix[index + node.length()]+".")
-            print('node: ' + str(self.get_edge(node)) + 'length: ' + str(node.length()))
-            print(index  + node.length())
-            print(prefix)
-            print(node.children.items())
+            # print("looking for " + prefix[index + node.length()]+".")
+            # print('node: ' + str(self.get_edge(node)) + 'length: ' + str(node.length()))
+            # print(index  + node.length())
+            # print(prefix)
+            # print(node.children.items())
             if child != None:
-                print('looked up  node' + prefix[index + node.length()] + 'got node ' + self.get_edge(child))
-                print("node = " + self.get_edge(child))
-                print("")
-                print("node = " + self.get_edge(child))
-                print("len = " + str(child.length()))
-                print("pre =" +prefix[index:index + child.length()])
-                print("")
+                # print('looked up  node' + prefix[index + node.length()] + 'got node ' + self.get_edge(child))
+                # print("node = " + self.get_edge(child))
+                # print("")
+                # print("node = " + self.get_edge(child))
+                # print("len = " + str(child.length()))
+                # print("pre =" +prefix[index:index + child.length()])
+                # print("")
                 end, match_length = self.edge_matching(child, index, prefix)
 
                 if end:
                     tmp_result = self.get_string_pointers(child)
-                    print(match_length)
+                    # print(match_length)
                     for element in tmp_result:
                         result[element] = index + match_length
-                        print(index + match_length)
+                        # print(index + match_length)
                     break
 
                 elif match_length == child.length():
                     node = child
                     index += match_length
-                    print('match le' + str(match_length))
+                    # print('match le' + str(match_length))
                 else:
-                    print('break 1')
+                    # print('break 1')
                     break
             else:
-                self.print_children(node)
-                print('break 2')
+                # self.print_children(node)
+                # print('break 2')
                 break
 
         return result
