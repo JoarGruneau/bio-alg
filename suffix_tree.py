@@ -5,7 +5,10 @@ class Node(object):
     def __init__(self, leaf_node):
         self.leaf_node = leaf_node
         self.children = {}
-        self.pointer = None
+        self.string_pointer = None
+        self.string_pointers = None
+        self.visit_count = None
+        self.last_visitor = None
         self.start =None
         self.end = None
         self.suffix_link = None
@@ -29,7 +32,7 @@ class Suffix_tree:
         self.root = None
 
         for i in range(self.lines):
-            self.string_list[i] = string_list[i] + '$' + (1 + len(str(self.lines)) -len(str(i)))*'0' + str(i)
+            self.string_list[i] = string_list[i] + '$'
 
         self.build_tree()
 
@@ -47,13 +50,26 @@ class Suffix_tree:
     def create_node(self, start, string_pointer, end=None, leaf_node = False):
         node = Node(leaf_node = leaf_node)
         node.string_pointer = string_pointer
+        node.last_visitor = string_pointer
         node.start = start
         node.end = end
+        node.visit_count = 1
+
+        if(leaf_node):
+            node.string_pointers = [string_pointer]
         # if(start != -1 and self.get_edge(node) == ""):
         #     raise ValueError('asdads')
 
         node.suffix_link = self.root
         return node
+
+    def update_visitor_info(self, node, string_pointer):
+        if(node.last_visitor != string_pointer):
+            node.visit_count += 1
+            node.last_visitor = string_pointer
+            if(node.leaf_node):
+                node.string_pointers.append(string_pointer)
+
 
     def build_tree(self):
         string_list_size = len(self.string_list)
@@ -78,7 +94,7 @@ class Suffix_tree:
         # print('string pointer =' + str(string_pointer))
         # print('index =' + str(index))
         # print('char' + self.string_list[string_pointer][index])
-        # self.print_clear("", self.root)
+        # # self.print_clear("", self.root)
         # print(self.root.children.items())
         # print(self.remainder)
 
@@ -100,6 +116,10 @@ class Suffix_tree:
                     self.last_created_node = None
             else:
                 child = self.active_node.children.get(self.string_list[string_pointer][self.active_edge])
+                if( self.get_edge(child)[0] != self.string_list[string_pointer][self.active_edge]):
+                    print("sadasdasdasaddsadsadsadsa")
+                    print(index)
+                # self.update_visitor_info(child, string_pointer)
                 # print('getting ' +  self.string_list[string_pointer][self.active_edge] + ' got ' + self.get_edge(child))
                 # print(child)
                 length = child.length()
@@ -107,6 +127,7 @@ class Suffix_tree:
                     self.active_edge += length
                     self.active_length -= length
                     self.active_node = child
+                    self.update_visitor_info(child, string_pointer)
                     # print('walking dow')
                     continue
 
@@ -121,31 +142,35 @@ class Suffix_tree:
                 # print(len(self.string_list[child.string_pointer]))
                 # print('start' + str(child.start))
                 # print(child.start + self.active_length)
-                if (self.string_list[child.string_pointer][child.start + self.active_length] == self.string_list[string_pointer][index]):
-                    if((self.last_created_node is not None) and (self.active_node != self.root)):
-                        self.last_created_node.suffix_link = self.active_node
-                        self.last_created_node  = None
+                if(self.string_list[string_pointer][index] != '$'):
+                    if (self.string_list[child.string_pointer][child.start + self.active_length] == self.string_list[string_pointer][index]):
+                        if((self.last_created_node is not None) and (self.active_node != self.root)):
+                            self.last_created_node.suffix_link = self.active_node
+                            self.last_created_node  = None
 
-                    self.active_length += 1
-                    break
+                        self.active_length += 1
+                        break
 
-                # print(self.string_list[child.string_pointer][child.start + self.active_length])
-                # print(self.string_list[string_pointer][index])
-                split_end = child.start + self.active_length - 1
-                # print('split end' + str(split_end))
-                # print('split' + str(child.start))
-                split = self.create_node(start = child.start,  string_pointer = child.string_pointer, end =split_end)
-                self.active_node.children[self.string_list[string_pointer][self.active_edge]] = split
+                    split_end = child.start + self.active_length - 1
+                    split = self.create_node(start = child.start,  string_pointer = child.string_pointer, end =split_end)
+                    split.visit_count = child.visit_count
 
-                new_node = self.create_node(start  = index, string_pointer = string_pointer, leaf_node=True)
-                split.children[self.string_list[string_pointer][index]] = new_node
-                child.start += self.active_length
-                split.children[self.string_list[child.string_pointer][child.start]] = child
+                    self.active_node.children[self.string_list[string_pointer][self.active_edge]] = split
 
-                if (self.last_created_node is not None):
-                    self.last_created_node.suffix_link = split
+                    new_node = self.create_node(start  = index, string_pointer = string_pointer, leaf_node=True)
+                    split.children[self.string_list[string_pointer][index]] = new_node
+                    child.start += self.active_length
+                    split.children[self.string_list[child.string_pointer][child.start]] = child
+                    self.update_visitor_info(split, string_pointer)
 
-                self.last_created_node = split
+                    if (self.last_created_node is not None):
+                        self.last_created_node.suffix_link = split
+
+                    self.last_created_node = split
+
+                else:
+                    self.update_visitor_info(child, string_pointer)
+
 
             self.remainder -= 1
             if ((self.active_node == self.root) and (self.active_length > 0)):
@@ -157,9 +182,10 @@ class Suffix_tree:
                 self.active_edge = index - self.remainder + 1
             elif (self.active_node != self.root):
                 self.active_node = self.active_node.suffix_link
+                self.update_visitor_info(self.active_node, string_pointer)
 
     def print_clear(self, spacer, node):
-        print(spacer + "node = " + self.get_edge(node) + " str_pointers " + str(node.string_pointer))
+        print(spacer + "node = " + self.get_edge(node) + " str_p " + str(node.string_pointer) + 'vis_c ' + str(node.visit_count) + 'points = ' + str(node.string_pointers))
         spacer = spacer + "  |  "
         for _, child in node.children.items():
             self.print_clear(spacer, child)
@@ -192,18 +218,16 @@ class Suffix_tree:
 
 
     def longest_suffix(self, prefix):
-        result = [0]*self.lines
+        result = [0]*(len(self.string_list))
         size = len(prefix)
         node = self.root
-        length = 0
         index = 0
         while index < size:
             end_node = node.children.get('$')
             if end_node != None:
-                tmp_result = self.get_string_pointers(end_node)
-                for element in tmp_result:
-                    result[element] = index
-            # print(node.length())
+                for pointer in end_node.string_pointers:
+                    result[pointer] = index
+
             child = node.children.get(prefix[index])
             # print("looking for " + prefix[index + node.length()]+".")
             # print('node: ' + str(self.get_edge(node)) + 'length: ' + str(node.length()))
@@ -221,11 +245,9 @@ class Suffix_tree:
                 end, match_length = self.edge_matching(child, index, prefix)
 
                 if end:
-                    tmp_result = self.get_string_pointers(child)
-                    # print(match_length)
-                    for element in tmp_result:
-                        result[element] = index + match_length
-                        # print(index + match_length)
+                    index += match_length
+                    for pointer in child.string_pointers:
+                        result[pointer] = index
                     break
 
                 elif match_length == child.length():
@@ -245,7 +267,14 @@ class Suffix_tree:
     # def imperfect_longest_suffix(self, missmatch_percentage, prefix):
 
 
-
+C = [
+'TTCAAGTAATCCAGGATAGGCATGGAATTCTCGGGTGCCAAGGAACTCCA',
+ 'TGAGGTAGTAGATTGTATAGTTTGGAATTCTCGGGTGCCAAGGAACTCCA',
+ 'TCGCGTGATGACATTCTCCGGAATCGCTGTACGGCCTTGATGAAAGCACA',
+ 'ACGTTAGGTCAAGGTGTAGCTGGAATTCTCGGGTGCCAAGGAACTCCCGT',
+# 'ACGGAGCCTGGAATTCTCGGGTGCCAAGGCACTCCAGTCACACAGTGATC',
+# 'TTCACAGTGGCTAAGTTCTGTGGAATTCTCGGGTGCCAAGGAACTCCAGT',
+]
 A = [
 # 'CACTTCATTGGTCCGTGTTTCTGAACCACATGAT',
 'TTCACAGTGGCTAAGTTCTGTGGAATTCTCGGGTGCCAAGGAACTCCAGT',
@@ -253,21 +282,21 @@ A = [
     'GCATGGGTGGTTCAGTGGTAGAATTCTCGCCTGGAATTCTCGGGTGCCAA',
     ]
 Ab = [
-# 'CACTTCATTGGTCCGTGTTTCTGAACCACATGAT',
+'AT',
     'TG',
-    # 'TTTCTATGATGAATCAAACTAGCTCACTATGACCGACAGTGAAAATACAT',
+     'TT',
     'CT',
     ]
 
 
 if __name__ =="__main__":
-    suf = Suffix_tree(A)
-    suf.print_children(suf.root)
+    suf = Suffix_tree(C)
+    # suf.print_children(suf.root)
     suf.print_clear("", suf.root)
-    print(suf.root.children.items())
-    # # print(suf.root.start)
-    # # print(suf.root.end)
-    # # print(suf.root.children.get('T').start)
-    # # print(suf.root.children.get('T').end)
-    # # print(suf.get_edge(suf.root.children.get('T')))
+    # print(suf.root.children.items())
+    # # # print(suf.root.start)
+    # # # print(suf.root.end)
+    # # # print(suf.root.children.get('T').start)
+    # # # print(suf.root.children.get('T').end)
+    # # # print(suf.get_edge(suf.root.children.get('T')))
     print(suf.longest_suffix('TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG'))
