@@ -116,9 +116,13 @@ class Suffix_tree:
                     self.last_created_node = None
             else:
                 child = self.active_node.children.get(self.string_list[string_pointer][self.active_edge])
+                # print(self.get_edge(child))
+                # self.update_visitor_info(child, string_pointer)
                 if( self.get_edge(child)[0] != self.string_list[string_pointer][self.active_edge]):
                     print("sadasdasdasaddsadsadsadsa")
                     print(index)
+                # if(string_pointer == 68):
+                #     print('looking for' + self.string_list[string_pointer][self.active_edge] + 'found' + self.get_edge(child))
                 # self.update_visitor_info(child, string_pointer)
                 # print('getting ' +  self.string_list[string_pointer][self.active_edge] + ' got ' + self.get_edge(child))
                 # print(child)
@@ -128,7 +132,6 @@ class Suffix_tree:
                     self.active_length -= length
                     self.active_node = child
                     self.update_visitor_info(child, string_pointer)
-                    # print('walking dow')
                     continue
 
                 # print('edge =' + self.get_edge(child))
@@ -142,15 +145,14 @@ class Suffix_tree:
                 # print(len(self.string_list[child.string_pointer]))
                 # print('start' + str(child.start))
                 # print(child.start + self.active_length)
-                if(self.string_list[string_pointer][index] != '$'):
-                    if (self.string_list[child.string_pointer][child.start + self.active_length] == self.string_list[string_pointer][index]):
-                        if((self.last_created_node is not None) and (self.active_node != self.root)):
-                            self.last_created_node.suffix_link = self.active_node
-                            self.last_created_node  = None
-
+                if (self.string_list[child.string_pointer][child.start + self.active_length] == self.string_list[string_pointer][index]):
+                    if((self.last_created_node is not None) and (self.active_node != self.root)):
+                        self.last_created_node.suffix_link = self.active_node
+                        self.last_created_node  = None
+                    if((self.string_list[string_pointer][index] != '$') or (self.string_list[child.string_pointer][child.start + self.active_length] != '$')):
                         self.active_length += 1
                         break
-
+                if((self.string_list[string_pointer][index] != '$') or (self.string_list[child.string_pointer][child.start + self.active_length] != '$')):
                     split_end = child.start + self.active_length - 1
                     split = self.create_node(start = child.start,  string_pointer = child.string_pointer, end =split_end)
                     split.visit_count = child.visit_count
@@ -266,14 +268,34 @@ class Suffix_tree:
 
     # def imperfect_longest_suffix(self, missmatch_percentage, prefix):
 
+    def find_adapter_sequence(self):
+        adapter_seq = ""
+        node = self.root
+        index = 0
+        while True:
+            max_visitor_count = 0
+            if( not node.leaf_node):
+                for key, child in node.children.items():
+                    if((key != '$') and (child.visit_count > max_visitor_count)):
+                        child_max_visits = child
+                        max_visit_count = child.visit_count
+                adapter_seq = adapter_seq + self.get_edge(child_max_visits)
+                node = child_max_visits
+            else:
+                adapter_seq = adapter_seq[:-1]
+                break
+        return adapter_seq
+
+
+
 
 C = [
 'TTCAAGTAATCCAGGATAGGCATGGAATTCTCGGGTGCCAAGGAACTCCA',
  'TGAGGTAGTAGATTGTATAGTTTGGAATTCTCGGGTGCCAAGGAACTCCA',
  'TCGCGTGATGACATTCTCCGGAATCGCTGTACGGCCTTGATGAAAGCACA',
  'ACGTTAGGTCAAGGTGTAGCTGGAATTCTCGGGTGCCAAGGAACTCCCGT',
-# 'ACGGAGCCTGGAATTCTCGGGTGCCAAGGCACTCCAGTCACACAGTGATC',
-# 'TTCACAGTGGCTAAGTTCTGTGGAATTCTCGGGTGCCAAGGAACTCCAGT',
+'ACGGAGCCTGGAATTCTCGGGTGCCAAGGCACTCCAGTCACACAGTGATC',
+'TTCACAGTGGCTAAGTTCTGTGGAATTCTCGGGTGCCAAGGAACTCCAGT',
 ]
 A = [
 # 'CACTTCATTGGTCCGTGTTTCTGAACCACATGAT',
